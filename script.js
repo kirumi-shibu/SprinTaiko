@@ -74,6 +74,7 @@ const gameState = {
   startTime: 0, // ゲーム開始時間
   missCount: 0, // ミスの回数
   isActive: false, // ゲームが進行中かどうかのフラグ
+  isStarting: false, // スタート処理中かどうかのフラグ
   hiSpeed: 1.0, // ハイスピード設定
   notesCount: 100, // ノーツ数
   volume: 0.25, // 音量
@@ -382,6 +383,10 @@ function updateVolume(newVolume, save = true) {
  * ゲームを開始する関数
  */
 async function startGame() {
+  // 多重起動を防止
+  if (gameState.isStarting || gameState.isActive) return;
+  gameState.isStarting = true;
+
   // AudioContextを初期化（ユーザーの初回アクション時）
   initAudioContext();
 
@@ -419,6 +424,7 @@ async function startGame() {
 
   // ゲーム状態のリセット
   gameState.isActive = true;
+  gameState.isStarting = false; // スタート処理完了
   gameState.currentIndex = 0;
   gameState.missCount = 0;
   dom.missDisplay.textContent = gameState.missCount; // ミス表示をリセット
@@ -532,7 +538,7 @@ dom.startButton.addEventListener("click", startGame);
 
 // Enterでゲーム開始、Escで中断するグローバルなキーイベント
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !gameState.isActive) {
+  if (event.key === "Enter" && !gameState.isActive && !gameState.isStarting) {
     startGame();
   }
 
@@ -550,6 +556,7 @@ function interruptGame() {
   playSound("cancel"); // 中断音を再生
 
   gameState.isActive = false;
+  gameState.isStarting = false; // スタート処理中だった場合もリセット
   clearInterval(timerInterval); // タイマーを停止
   document.removeEventListener("keydown", handleKeyPress); // イベントリスナーを削除
 
