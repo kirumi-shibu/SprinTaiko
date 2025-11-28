@@ -616,3 +616,17 @@ h1 {
 .note.hit {
   visibility: hidden; /* display:noneから変更 */
 }
+
+.page-footer {
+  padding: 10px;
+  font-size: 0.5em;
+  color: #666;
+  text-align: center;
+}
+.page-footer a {
+  color: #999;
+  text-decoration: none;
+}
+.page-footer a:hover {
+  text-decoration: underline;
+}
