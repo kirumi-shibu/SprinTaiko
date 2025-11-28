@@ -11,7 +11,7 @@ The goal is to hit the notes that flow from the right as quickly and accurately 
 ## ✨ Features
 
 - **Adjustable Hi-Speed:** Change the speed at which notes travel.
-- **Customizable Note Count:** Set the number of notes for each game session (from 10 to 999).
+- **Customizable Note Count:** Set the number of notes for each game session.
 - **Key Configuration:** Freely assign keys for "Don" and "Ka" actions.
 - **Scoring and Ranking:** Your score is based on speed and accuracy. The top 5 scores are saved locally in your browser.
 - **Sound Customization:**
