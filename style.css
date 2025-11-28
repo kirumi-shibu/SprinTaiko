@@ -127,7 +127,7 @@ h1 {
   position: relative;
   align-items: center; /* フレックスアイテムを垂直方向の中央に配置 */
   left: var(--notes-display-left, 70px);
-  transition: transform 0.1s linear; /* 音符が流れるアニメーション */
+  transition: transform var(--note-scroll-duration, 0.1s) linear; /* 音符が流れるアニメーション */
 }
 
 .note {
@@ -282,7 +282,8 @@ h1 {
 
 /* 設定パネル */
 #settings-panel,
-#help-panel {
+#help-panel,
+#advanced-settings-panel {
   display: none; /* 初期状態は非表示 */
   position: fixed;
   top: 50%;
@@ -305,6 +306,14 @@ h1 {
   font-size: 2em;
   margin: 0 0 20px 0;
   text-align: center;
+}
+/* advanced-settings-panel にも同じスタイルを適用 */
+#advanced-settings-panel h3 {
+  font-family: "WDXL Lubrifont JP N", sans-serif;
+  font-size: 2em;
+  margin: 0 0 20px 0;
+  text-align: center;
+  color: #ffc107; /* マニアックな設定なので色を変える */
 }
 
 .volume-control {
@@ -347,6 +356,12 @@ h1 {
   justify-content: space-between; /* ラベルテキストとボタンを両端揃え */
   align-items: center; /* 垂直方向の中央揃え */
   width: 100%; /* 幅を100%に */
+}
+.setting-description {
+  font-size: 0.8em;
+  color: #9aa;
+  margin-top: 5px;
+  text-align: left;
 }
 
 .label-text-group {
@@ -401,7 +416,8 @@ h1 {
 
 /* 設定ボタン */
 .settings-toggle-btn,
-.help-toggle-btn {
+.help-toggle-btn,
+.advanced-settings-toggle-btn {
   position: absolute;
   top: 20px;
   width: 50px;
@@ -420,15 +436,19 @@ h1 {
   z-index: 1500; /* 他の要素より手前に */
 }
 .settings-toggle-btn:hover,
-.help-toggle-btn:hover {
+.help-toggle-btn:hover,
+.advanced-settings-toggle-btn:hover {
   background: #4a4e69;
   color: white;
 }
 .settings-toggle-btn {
   right: 20px;
 }
+.advanced-settings-toggle-btn {
+  right: 85px;
+}
 .help-toggle-btn {
-  right: 85px; /* ♪ボタンの左隣に配置 */
+  right: 150px; /* 歯車ボタンの左隣に配置 */
 }
 
 #help-panel p {

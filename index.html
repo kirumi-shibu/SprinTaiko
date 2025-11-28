@@ -35,6 +35,12 @@
   </head>
   <body>
     <button id="open-help-btn" class="help-toggle-btn">？</button>
+    <button
+      id="open-advanced-settings-btn"
+      class="advanced-settings-toggle-btn"
+    >
+      ⚙
+    </button>
     <button id="open-settings-btn" class="settings-toggle-btn">♪</button>
 
     <h1>
@@ -248,6 +254,29 @@
       </ul>
       <div class="setting-actions">
         <button id="close-help-btn">Close</button>
+      </div>
+    </div>
+    <div id="advanced-settings-panel">
+      <h3>Advanced Settings</h3>
+      <div class="setting-item">
+        <label for="animation-speed-slider">Note Scroll Speed (sec)</label>
+        <div class="volume-control">
+          <input
+            type="range"
+            id="animation-speed-slider"
+            min="0.00"
+            max="0.3"
+            step="0.01"
+          />
+          <span id="animation-speed-display">0.10</span>
+        </div>
+        <p class="setting-description">
+          Lower values make the scroll faster. Recommended for advanced players
+          only.
+        </p>
+      </div>
+      <div class="setting-actions">
+        <button id="close-advanced-settings-btn">Close</button>
       </div>
     </div>
 

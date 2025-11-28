@@ -31,10 +31,19 @@ const dom = {
   volumeSlider: document.getElementById("volume-slider"),
   volumeDisplay: document.getElementById("volume-display"),
   versionDisplay: document.getElementById("version-display"),
+  advancedSettingsPanel: document.getElementById("advanced-settings-panel"),
+  openAdvancedSettingsBtn: document.getElementById(
+    "open-advanced-settings-btn"
+  ),
+  closeAdvancedSettingsBtn: document.getElementById(
+    "close-advanced-settings-btn"
+  ),
+  animationSpeedSlider: document.getElementById("animation-speed-slider"),
+  animationSpeedDisplay: document.getElementById("animation-speed-display"),
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.28.4"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.28.5"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -42,6 +51,7 @@ const HISPEED_KEY = "sprintaiko-hispeed"; // localStorageのキー
 const NOTES_COUNT_KEY = "sprintaiko-notes-count"; // localStorageのキー
 const CUSTOM_SOUND_KEY_PREFIX = "sprintaiko-sound-"; // カスタム音声のキープレフィックス
 const VOLUME_KEY = "sprintaiko-volume"; // 音量のキー
+const ANIMATION_SPEED_KEY = "sprintaiko-animation-speed"; // アニメーション速度のキー
 const MISS_PENALTY_TIME = 500; // ミスした場合のタイマーペナルティ (ミリ秒)
 const COUNTDOWN_INTERVAL = 500; // カウントダウンの間隔 (ms)
 
@@ -381,6 +391,26 @@ function updateVolume(newVolume, save = true) {
     localStorage.setItem(VOLUME_KEY, gameState.volume);
   }
 }
+
+/**
+ * ノートスクロールのアニメーション速度を更新する
+ * @param {number} newDuration 新しいアニメーション時間 (秒)
+ * @param {boolean} save 設定を保存するかどうか
+ */
+function updateAnimationSpeed(newDuration, save = true) {
+  const duration = Math.max(0.0, Math.min(newDuration, 0.3)).toFixed(2);
+
+  document.documentElement.style.setProperty(
+    "--note-scroll-duration",
+    `${duration}s`
+  );
+  dom.animationSpeedSlider.value = duration;
+  dom.animationSpeedDisplay.textContent = duration;
+
+  if (save) {
+    localStorage.setItem(ANIMATION_SPEED_KEY, duration);
+  }
+}
 /**
  * ゲームを開始する関数
  */
@@ -594,9 +624,12 @@ function initialize() {
   const savedVolume = parseFloat(localStorage.getItem(VOLUME_KEY) ?? "0.25");
   const savedNotesCount =
     parseInt(localStorage.getItem(NOTES_COUNT_KEY)) || 100;
+  const savedAnimationSpeed =
+    parseFloat(localStorage.getItem(ANIMATION_SPEED_KEY)) || 0.1;
   updateVolume(savedVolume, false); // UIと内部状態のみ更新
   updateNotesCount(savedNotesCount);
   updateHiSpeed(savedSpeed);
+  updateAnimationSpeed(savedAnimationSpeed, false);
   displayRanking(); // ページ読み込み時にランキングを表示
 
   // バージョン番号を表示
@@ -623,6 +656,11 @@ function initialize() {
   // 音量スライダーのイベントリスナー
   dom.volumeSlider.addEventListener("input", (event) => {
     updateVolume(parseFloat(event.target.value));
+  });
+
+  // アニメーション速度スライダーのイベントリスナー
+  dom.animationSpeedSlider.addEventListener("input", (event) => {
+    updateAnimationSpeed(parseFloat(event.target.value));
   });
 }
 
@@ -749,6 +787,14 @@ dom.singleResetSoundBtns.forEach((button) => {
   button.addEventListener("click", (event) => {
     resetSingleSound(event.target.dataset.soundKey);
   });
+});
+
+// --- 高度な設定パネルのイベントリスナー ---
+dom.openAdvancedSettingsBtn.addEventListener("click", () => {
+  dom.advancedSettingsPanel.style.display = "block";
+});
+dom.closeAdvancedSettingsBtn.addEventListener("click", () => {
+  dom.advancedSettingsPanel.style.display = "none";
 });
 
 // ランキングリセットボタンのイベントリスナー
