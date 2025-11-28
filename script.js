@@ -44,7 +44,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.28.8"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.1"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -312,8 +312,8 @@ function getNoteOffset() {
  * @param {number} newSpeed 新しいハイスピード値
  */
 function updateHiSpeed(newSpeed) {
-  // 0.1から5.0の範囲に制限
-  gameState.hiSpeed = Math.max(0.1, Math.min(newSpeed, 5.0));
+  // 0.2から3.0の範囲に制限
+  gameState.hiSpeed = Math.max(0.2, Math.min(newSpeed, 3.0));
   const speed = gameState.hiSpeed.toFixed(1);
 
   // UI表示を更新
