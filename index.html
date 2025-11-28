@@ -254,7 +254,14 @@
     <div id="bottom-wrapper" class="hidden">
       <div id="result-display">
         <h2>Result</h2>
-        <p class="final-score-p">Score: <span id="final-score"></span></p>
+        <p class="final-score-p">
+          <span
+            class="score-label-tooltip"
+            title="Score = (hit/s) × Accuracy × 10000"
+            >Score:</span
+          >
+          <span id="final-score"></span>
+        </p>
         <p>Time: <span id="clear-time"></span> sec</p>
         <p>Speed: <span id="kps-display"></span> hit/s</p>
         <p>Miss: <span id="penalty-count"></span></p>
@@ -269,7 +276,7 @@
     <script src="script.js"></script>
     <footer class="page-footer">
       <p>
-        SprinTaiko v2025.11.28.2 -
+        SprinTaiko v2025.11.28.3 -
         <a
           href="https://github.com/kirumi-shibu/SprinTaiko"
           target="_blank"

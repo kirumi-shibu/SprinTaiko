@@ -596,6 +596,13 @@ h1 {
   border-bottom-width: 2px;
 }
 
+/* スコア計算式のツールチップ用スタイル */
+.score-label-tooltip {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  cursor: help;
+}
+
 #result-display p {
   font-size: 1.2em;
   margin: 15px 0;
