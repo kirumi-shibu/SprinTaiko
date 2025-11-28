@@ -30,9 +30,11 @@ const dom = {
   resetRankingBtn: document.getElementById("reset-ranking-btn"),
   volumeSlider: document.getElementById("volume-slider"),
   volumeDisplay: document.getElementById("volume-display"),
+  versionDisplay: document.getElementById("version-display"),
 };
 
 // --- 定数定義 ---
+const VERSION = "v2025.11.28.4"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -596,6 +598,9 @@ function initialize() {
   updateNotesCount(savedNotesCount);
   updateHiSpeed(savedSpeed);
   displayRanking(); // ページ読み込み時にランキングを表示
+
+  // バージョン番号を表示
+  dom.versionDisplay.textContent = VERSION;
 
   // ハイスピードボタンのイベントリスナー
   dom.speedUpBtn.addEventListener("click", () => {
