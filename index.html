@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SprinTaiko</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=WDXL+Lubrifont+JP+N&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <button id="open-help-btn" class="help-toggle-btn">？</button>
+    <button id="open-settings-btn" class="settings-toggle-btn">♪</button>
+
+    <h1>
+      <span class="title-sprint">Sprin</span
+      ><span class="title-sprint title-t">T</span
+      ><span class="title-aiko">aiko</span>
+    </h1>
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="game-container">
+      <div id="target-note-indicator"></div>
+      <div id="target-note-indicator2"></div>
+      <div id="countdown" class="hidden"></div>
+      <div id="notes-display-wrapper">
+        <div id="notes-display"></div>
+      </div>
+    </div>
+    <div id="info-display">
+      <div class="info-box">
+        <span class="info-label">Time</span>
+        <span id="timer" class="info-value">0.00</span>
+      </div>
+      <div class="info-box">
+        <span class="info-label">Miss</span>
+        <span id="miss" class="info-value">0</span>
+      </div>
+      <div class="info-box">
+        <span class="info-label">Remaining</span>
+        <span id="remaining-notes" class="info-value">100</span>
+      </div>
+      <div class="info-box">
+        <span class="info-label">Hi-Speed</span>
+        <div class="speed-control">
+          <button id="speed-down-btn">-</button>
+          <span id="speed-display" class="info-value">1.0</span>
+          <button id="speed-up-btn">+</button>
+        </div>
+      </div>
+      <div class="info-box">
+        <span class="info-label">Notes</span>
+        <input
+          type="number"
+          id="notes-count-input"
+          class="setting-input"
+          min="10"
+          max="999"
+          step="10"
+        />
+      </div>
+      <button id="start-button">Start</button>
+    </div>
+    <div id="settings-panel">
+      <h3>Sound Settings</h3>
+      <div class="setting-item">
+        <label for="volume-slider">Volume</label>
+        <div class="volume-control">
+          <input type="range" id="volume-slider" min="0" max="1" step="0.01" />
+          <span id="volume-display">100</span>
+        </div>
+      </div>
+      <hr class="setting-divider" />
+      <div class="setting-item">
+        <label for="don-file-input"
+          ><span class="label-text-group"
+            >Don<span class="sound-status"></span
+          ></span>
+          <button
+            class="reset-single-sound-btn hidden"
+            data-sound-key="don"
+            title="Reset to default"
+          >
+            ×
+          </button></label
+        >
+        <input
+          type="file"
+          id="don-file-input"
+          class="sound-file-input"
+          data-sound-key="don"
+          accept="audio/*"
+        />
+      </div>
+      <div class="setting-item">
+        <label for="ka-file-input"
+          ><span class="label-text-group"
+            >Ka<span class="sound-status"></span
+          ></span>
+          <button
+            class="reset-single-sound-btn hidden"
+            data-sound-key="ka"
+            title="Reset to default"
+          >
+            ×
+          </button></label
+        >
+        <input
+          type="file"
+          id="ka-file-input"
+          class="sound-file-input"
+          data-sound-key="ka"
+          accept="audio/*"
+        />
+      </div>
+      <div class="setting-item">
+        <label for="miss-file-input"
+          ><span class="label-text-group"
+            >Miss<span class="sound-status"></span
+          ></span>
+          <button
+            class="reset-single-sound-btn hidden"
+            data-sound-key="miss"
+            title="Reset to default"
+          >
+            ×
+          </button></label
+        >
+        <input
+          type="file"
+          id="miss-file-input"
+          class="sound-file-input"
+          data-sound-key="miss"
+          accept="audio/*"
+        />
+      </div>
+      <div class="setting-item">
+        <label for="countdown-file-input"
+          ><span class="label-text-group"
+            >Countdown<span class="sound-status"></span
+          ></span>
+          <button
+            class="reset-single-sound-btn hidden"
+            data-sound-key="countdown"
+            title="Reset to default"
+          >
+            ×
+          </button></label
+        >
+        <input
+          type="file"
+          id="countdown-file-input"
+          class="sound-file-input"
+          data-sound-key="countdown"
+          accept="audio/*"
+        />
+      </div>
+      <div class="setting-item">
+        <label for="clear-file-input"
+          ><span class="label-text-group"
+            >Clear<span class="sound-status"></span
+          ></span>
+          <button
+            class="reset-single-sound-btn hidden"
+            data-sound-key="clear"
+            title="Reset to default"
+          >
+            ×
+          </button></label
+        >
+        <input
+          type="file"
+          id="clear-file-input"
+          class="sound-file-input"
+          data-sound-key="clear"
+          accept="audio/*"
+        />
+      </div>
+      <div class="setting-item">
+        <label for="cancel-file-input"
+          ><span class="label-text-group"
+            >Cancel<span class="sound-status"></span
+          ></span>
+          <button
+            class="reset-single-sound-btn hidden"
+            data-sound-key="cancel"
+            title="Reset to default"
+          >
+            ×
+          </button></label
+        >
+        <input
+          type="file"
+          id="cancel-file-input"
+          class="sound-file-input"
+          data-sound-key="cancel"
+          accept="audio/*"
+        />
+      </div>
+      <div class="setting-actions">
+        <button id="reset-sounds-btn">Reset to Default</button>
+        <button id="close-settings-btn">Close</button>
+      </div>
+    </div>
+    <div id="help-panel">
+      <h3>How to Play</h3>
+      <p>
+        Press the corresponding keys when the notes reach the target circle.
+      </p>
+      <ul class="key-guide">
+        <li>
+          <span class="key-icon">F</span> / <span class="key-icon">J</span> :
+          Don (Red notes)
+        </li>
+        <li>
+          <span class="key-icon">D</span> / <span class="key-icon">K</span> : Ka
+          (Blue notes)
+        </li>
+        <hr class="key-guide-divider" />
+        <li><span class="key-icon">Enter</span> : Start / Retry Game</li>
+        <li><span class="key-icon">Esc</span> : Interrupt Game</li>
+      </ul>
+      <div class="setting-actions">
+        <button id="close-help-btn">Close</button>
+      </div>
+    </div>
+
+    <div id="bottom-wrapper" class="hidden">
+      <div id="result-display">
+        <h2>Result</h2>
+        <p class="final-score-p">Score: <span id="final-score"></span></p>
+        <p>Time: <span id="clear-time"></span> sec</p>
+        <p>Speed: <span id="kps-display"></span> hit/s</p>
+        <p>Miss: <span id="penalty-count"></span></p>
+      </div>
+      <div id="ranking-display">
+        <h2>Ranking</h2>
+        <button id="reset-ranking-btn" title="Reset Ranking">⟳</button>
+        <ol id="ranking-list"></ol>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
