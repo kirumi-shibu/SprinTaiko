@@ -538,8 +538,14 @@ dom.startButton.addEventListener("click", startGame);
 
 // Enterでゲーム開始、Escで中断するグローバルなキーイベント
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !gameState.isActive && !gameState.isStarting) {
-    startGame();
+  if (event.key === "Enter") {
+    if (gameState.isActive) {
+      // ゲーム中にEnterが押されたら、中断して即座にリスタート
+      interruptGame(false); // 中断音を鳴らさずに中断
+      startGame();
+    } else if (!gameState.isStarting) {
+      startGame();
+    }
   }
 
   // Escapeキーでゲームを中断（ゲーム中のみ）
@@ -551,9 +557,9 @@ document.addEventListener("keydown", (event) => {
 /**
  * ゲームを中断する関数
  */
-function interruptGame() {
+function interruptGame(playCancelSound = true) {
   if (!gameState.isActive) return;
-  playSound("cancel"); // 中断音を再生
+  if (playCancelSound) playSound("cancel"); // 中断音を再生
 
   gameState.isActive = false;
   gameState.isStarting = false; // スタート処理中だった場合もリセット
