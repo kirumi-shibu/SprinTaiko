@@ -223,11 +223,12 @@ h1 {
   background: #4a4e69;
   border: none;
   color: white;
-  font-size: 1.5em;
+  font-family: "Kosugi Maru", sans-serif;
+  font-size: 1em;
   font-weight: bold;
   border-radius: 50%;
-  width: 35px;
-  height: 35px;
+  width: 25px;
+  height: 25px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -425,6 +426,7 @@ h1 {
 }
 
 .sound-file-input {
+  font-family: "Kosugi Maru", sans-serif;
   font-size: 0.9em;
 }
 
@@ -439,9 +441,11 @@ h1 {
   background: #4a4e69;
   border: none;
   color: white;
+  font-family: "Kosugi Maru", sans-serif;
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
+
   transition: background-color 0.2s;
 }
 
