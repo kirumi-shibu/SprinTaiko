@@ -44,7 +44,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.28.6"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.28.7"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -444,6 +444,8 @@ async function startGame() {
 
   // --- カウントダウン処理 ---
   dom.countdownDisplay.classList.remove("hidden");
+  // transitionを元に戻しておく（中断->再開のケースを考慮）
+  dom.countdownDisplay.style.transition = "";
   playSound("countdown");
   dom.countdownDisplay.textContent = "3";
   await sleep(COUNTDOWN_INTERVAL);
@@ -453,6 +455,9 @@ async function startGame() {
   playSound("countdown");
   dom.countdownDisplay.textContent = "1";
   await sleep(COUNTDOWN_INTERVAL);
+
+  // 「1」が消えるときだけアニメーションを無効にして即座に非表示にする
+  dom.countdownDisplay.style.transition = "none";
   dom.countdownDisplay.classList.add("hidden");
 
   // ゲーム状態のリセット
