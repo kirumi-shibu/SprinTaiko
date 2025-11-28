@@ -40,10 +40,11 @@ const dom = {
   ),
   animationSpeedSlider: document.getElementById("animation-speed-slider"),
   animationSpeedDisplay: document.getElementById("animation-speed-display"),
+  resetKeyConfigBtn: document.getElementById("reset-key-config-btn"),
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.28.5"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.28.6"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -54,14 +55,7 @@ const VOLUME_KEY = "sprintaiko-volume"; // 音量のキー
 const ANIMATION_SPEED_KEY = "sprintaiko-animation-speed"; // アニメーション速度のキー
 const MISS_PENALTY_TIME = 500; // ミスした場合のタイマーペナルティ (ミリ秒)
 const COUNTDOWN_INTERVAL = 500; // カウントダウンの間隔 (ms)
-
-// キーと音符のマッピング
-const KEY_MAP = {
-  f: "don",
-  j: "don",
-  d: "ka",
-  k: "ka",
-};
+const KEY_CONFIG_KEY = "sprintaiko-key-config"; // キー設定のキー
 
 // --- 音声管理 ---
 let audioContext;
@@ -90,7 +84,14 @@ const gameState = {
   hiSpeed: 1.0, // ハイスピード設定
   notesCount: 100, // ノーツ数
   volume: 0.25, // 音量
+  keyConfig: {
+    don_left: "f",
+    don_right: "j",
+    ka_left: "d",
+    ka_right: "k",
+  },
 };
+let keyMap = {}; // keyConfigから生成される逆引きマップ
 
 // タイマーのID
 let timerInterval = null; // タイマーのID
@@ -480,10 +481,10 @@ function handleKeyPress(event) {
   if (!gameState.isActive) return; // ゲームがアクティブでなければ何もしない
 
   const key = event.key.toLowerCase();
-  if (!KEY_MAP[key]) return; // 対象キーでなければ無視
+  if (!keyMap[key]) return; // 対象キーでなければ無視
 
   const expectedNoteType = gameState.sequence[gameState.currentIndex];
-  const pressedNoteType = KEY_MAP[key];
+  const pressedNoteType = keyMap[key];
 
   if (pressedNoteType === expectedNoteType) {
     // --- 正しいキーが押された場合 ---
@@ -618,6 +619,47 @@ function interruptGame(playCancelSound = true) {
   document.body.style.backgroundColor = "#023";
 }
 
+/**
+ * キー設定を更新し、UIとlocalStorageに保存する
+ * @param {object} newConfig 新しいキー設定オブジェクト
+ */
+function updateKeyConfig(newConfig) {
+  gameState.keyConfig = { ...gameState.keyConfig, ...newConfig };
+
+  // 逆引きマップを再生成
+  keyMap = {};
+  keyMap[gameState.keyConfig.don_left] = "don";
+  keyMap[gameState.keyConfig.don_right] = "don";
+  keyMap[gameState.keyConfig.ka_left] = "ka";
+  keyMap[gameState.keyConfig.ka_right] = "ka";
+
+  // UIの表示を更新
+  for (const action in gameState.keyConfig) {
+    const button = document.querySelector(
+      `.key-config-btn[data-action="${action}"]`
+    );
+    if (button) {
+      button.textContent = gameState.keyConfig[action].toUpperCase();
+    }
+  }
+
+  // localStorageに保存
+  localStorage.setItem(KEY_CONFIG_KEY, JSON.stringify(gameState.keyConfig));
+}
+
+/**
+ * デフォルトのキー設定に戻す
+ */
+function resetKeyConfigToDefault() {
+  const defaultConfig = {
+    don_left: "f",
+    don_right: "j",
+    ka_left: "d",
+    ka_right: "k",
+  };
+  updateKeyConfig(defaultConfig);
+}
+
 // --- 初期化処理 ---
 function initialize() {
   const savedSpeed = parseFloat(localStorage.getItem(HISPEED_KEY)) || 1.0;
@@ -626,11 +668,15 @@ function initialize() {
     parseInt(localStorage.getItem(NOTES_COUNT_KEY)) || 100;
   const savedAnimationSpeed =
     parseFloat(localStorage.getItem(ANIMATION_SPEED_KEY)) || 0.1;
+  const savedKeyConfig =
+    JSON.parse(localStorage.getItem(KEY_CONFIG_KEY)) || gameState.keyConfig;
+
   updateVolume(savedVolume, false); // UIと内部状態のみ更新
   updateNotesCount(savedNotesCount);
   updateHiSpeed(savedSpeed);
   updateAnimationSpeed(savedAnimationSpeed, false);
   displayRanking(); // ページ読み込み時にランキングを表示
+  updateKeyConfig(savedKeyConfig); // 保存されたキー設定を読み込む
 
   // バージョン番号を表示
   dom.versionDisplay.textContent = VERSION;
@@ -769,8 +815,6 @@ async function resetSingleSound(soundKey) {
   updateSoundSettingsUI();
 }
 
-initialize();
-
 // --- 設定パネルのイベントリスナー ---
 dom.openSettingsBtn.addEventListener("click", () => {
   updateSoundSettingsUI(); // パネルを開くときにUIを更新
@@ -813,3 +857,49 @@ dom.openHelpBtn.addEventListener("click", () => {
 dom.closeHelpBtn.addEventListener("click", () => {
   dom.helpPanel.style.display = "none";
 });
+
+// --- キーコンフィグパネルのイベントリスナー ---
+dom.resetKeyConfigBtn.addEventListener("click", resetKeyConfigToDefault);
+
+document.querySelectorAll(".key-config-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    const action = button.dataset.action;
+    button.textContent = "..."; // 入力待ち状態を示す
+    button.style.borderColor = "#ffc107";
+
+    const handleKeyAssignment = (e) => {
+      e.preventDefault();
+      window.removeEventListener("keydown", handleKeyAssignment, {
+        capture: true,
+      });
+      button.style.borderColor = ""; // ボーダー色を元に戻す
+
+      // 修飾キーや特殊キーは無視
+      if (e.key.length > 1 && e.key !== " ") {
+        updateKeyConfig({}); // UI表示を元に戻すため空のオブジェクトで更新
+        return;
+      }
+
+      const newKey = e.key.toLowerCase();
+
+      // 他のアクションで既に使用されているかチェック
+      for (const act in gameState.keyConfig) {
+        if (gameState.keyConfig[act] === newKey && act !== action) {
+          alert(
+            `Key "${newKey.toUpperCase()}" is already assigned to another action.`
+          );
+          updateKeyConfig({}); // UI表示を元に戻す
+          return;
+        }
+      }
+
+      // 新しいキーを設定
+      updateKeyConfig({ [action]: newKey });
+    };
+
+    window.addEventListener("keydown", handleKeyAssignment, { capture: true });
+  });
+});
+
+// --- すべての準備が整ったので、初期化処理を実行 ---
+initialize();
