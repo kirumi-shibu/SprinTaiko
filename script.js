@@ -14,6 +14,7 @@ const dom = {
   penaltyCountDisplay: document.getElementById("penalty-count"),
   kpsDisplay: document.getElementById("kps-display"),
   rankingList: document.getElementById("ranking-list"),
+  rankingInfo: document.getElementById("ranking-info"),
   speedDisplay: document.getElementById("speed-display"),
   speedUpBtn: document.getElementById("speed-up-btn"),
   speedDownBtn: document.getElementById("speed-down-btn"),
@@ -44,7 +45,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.3"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.4"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -551,6 +552,7 @@ function endGame() {
 
   // --- ランキングの更新処理（ノーツ数が100以上の場合のみ） ---
   if (gameState.notesCount >= 100) {
+    dom.rankingInfo.classList.add("hidden"); // 注釈を非表示にする
     const ranking = loadRanking();
     ranking.push({ score });
     // スコアで降順にソートし、上位5件に絞る
@@ -560,6 +562,10 @@ function endGame() {
     // localStorageに保存
     localStorage.setItem(RANKING_KEY, JSON.stringify(newRanking));
     displayRanking(score); // 更新後のランキングを表示（新スコアを強調）
+  } else {
+    // 100ノーツ未満の場合は、注釈を表示してランキング登録されないことを明示
+    dom.rankingInfo.classList.remove("hidden");
+    displayRanking(); // 現在のランキングをそのまま表示
   }
 
   // 結果を表示
