@@ -589,6 +589,11 @@ h1 {
   box-sizing: border-box;
 }
 
+/* ランキング注釈が非表示の時は、レイアウトから完全に取り除く */
+#ranking-info.hidden {
+  display: none;
+}
+
 #ranking-display h2 {
   font-family: "WDXL Lubrifont JP N", sans-serif;
   font-size: 2.5em;
@@ -604,10 +609,26 @@ h1 {
 
 #ranking-list li {
   display: flex;
-  justify-content: space-between;
+  align-items: baseline; /* テキストのベースラインを揃える */
   font-size: 1.2em;
   padding: 8px 5px;
   border-bottom: 1px solid #333;
+}
+
+.rank {
+  flex-basis: 15%;
+  text-align: left;
+}
+.score {
+  flex-basis: 50%;
+  text-align: right;
+  font-weight: bold;
+}
+.miss {
+  flex-basis: 35%;
+  text-align: right;
+  font-size: 0.8em;
+  color: #9aa;
 }
 
 #reset-ranking-btn {

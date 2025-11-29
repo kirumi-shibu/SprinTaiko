@@ -46,7 +46,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.5"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.6"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -214,9 +214,9 @@ function loadRanking() {
 
 /**
  * ランキングを画面に表示する
- * @param {number|null} newScore 強調表示する新しいスコア
+ * @param {object|null} newRecord 強調表示する新しいレコード {score, missCount}
  */
-function displayRanking(newScore = null) {
+function displayRanking(newRecord = null) {
   const ranking = loadRanking();
   dom.rankingList.innerHTML = "";
 
@@ -226,8 +226,15 @@ function displayRanking(newScore = null) {
     const scoreData = ranking[i];
 
     if (scoreData) {
-      li.innerHTML = `<span>${rank}</span> <span>${scoreData.score}</span>`;
-      if (scoreData.score === newScore) {
+      li.innerHTML = `<span class="rank">${rank}</span> <span class="score">${
+        scoreData.score
+      }</span> <span class="miss">Miss: ${scoreData.missCount ?? 0}</span>`;
+      // スコアとミスカウントが一致する場合にハイライトする
+      if (
+        newRecord &&
+        scoreData.score === newRecord.score &&
+        scoreData.missCount === newRecord.missCount
+      ) {
         li.classList.add("new-record");
       }
     } else {
@@ -602,19 +609,20 @@ function endGame() {
   const accuracy =
     (gameState.notesCount - gameState.missCount) / gameState.notesCount;
   const score = Math.round(kps * accuracy ** 3 * 10000);
+  const newRecord = { score: score, missCount: gameState.missCount };
 
   // --- ランキングの更新処理（ノーツ数が100以上の場合のみ） ---
   if (gameState.notesCount >= 100) {
     dom.rankingInfo.classList.add("hidden"); // 注釈を非表示にする
     const ranking = loadRanking();
-    ranking.push({ score });
+    ranking.push(newRecord);
     // スコアで降順にソートし、上位5件に絞る
     const newRanking = ranking
       .sort((a, b) => b.score - a.score)
       .slice(0, RANKING_SIZE);
     // localStorageに保存
     localStorage.setItem(RANKING_KEY, JSON.stringify(newRanking));
-    displayRanking(score); // 更新後のランキングを表示（新スコアを強調）
+    displayRanking(newRecord); // 更新後のランキングを表示（新スコアを強調）
   } else {
     // 100ノーツ未満の場合は、注釈を表示してランキング登録されないことを明示
     dom.rankingInfo.classList.remove("hidden");
