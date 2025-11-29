@@ -46,7 +46,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.6"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.7"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -94,6 +94,11 @@ const gameState = {
     ka_left: "d",
     ka_right: "k",
   },
+  // アニメーション用の状態
+  scrollX: 0, // 現在のスクロール位置 (translateX)
+  animationStartTime: 0, // アニメーションの開始時刻
+  animationStartScrollX: 0, // アニメーションの開始位置
+  animationEndScrollX: 0, // アニメーションの終了位置
 };
 let keyMap = {}; // keyConfigから生成される逆引きマップ
 
@@ -488,13 +493,6 @@ async function startGame() {
     // このまま処理を続行させる（再帰呼び出しをなくす）
   }
 
-  // --- アニメーションを無効にして、譜面の位置を即座にリセット ---
-  dom.notesDisplay.style.transition = "none";
-  dom.notesDisplay.style.transform = "translateX(0px)";
-  // ブラウザに強制的にスタイルを適用させるための小技（リフロー）
-  dom.notesDisplay.offsetHeight; // この行は重要です
-  dom.notesDisplay.style.transition = ""; // transitionの設定を元に戻す
-
   // ★カウントダウン前に譜面をクリアする
   dom.notesDisplay.innerHTML = "";
 
@@ -525,6 +523,11 @@ async function startGame() {
   gameState.isStarting = false; // スタート処理完了
   gameState.currentIndex = 0;
   gameState.missCount = 0;
+  gameState.scrollX = 0;
+  gameState.animationStartTime = 0;
+  gameState.animationStartScrollX = 0;
+  gameState.animationEndScrollX = 0;
+  dom.notesDisplay.style.transform = "translateX(0px)"; // 描画をリセット
   dom.missDisplay.textContent = gameState.missCount; // ミス表示をリセット
   updateProgressBar(); // プログレスバーをリセット
   generateNotes();
@@ -536,6 +539,9 @@ async function startGame() {
 
   // キー入力のイベントリスナーを設定
   document.addEventListener("keydown", handleKeyPress);
+
+  // ゲームループを開始
+  requestAnimationFrame(gameLoop);
 }
 
 /**
@@ -569,9 +575,11 @@ function handleKeyPress(event) {
     }
     gameState.currentIndex++;
 
-    dom.notesDisplay.style.transform = `translateX(${-(
-      gameState.currentIndex * getNoteOffset()
-    )}px)`;
+    // アニメーションの開始状態を設定
+    gameState.animationStartTime = Date.now();
+    gameState.animationStartScrollX = gameState.scrollX;
+    gameState.animationEndScrollX = -(gameState.currentIndex * getNoteOffset());
+
     updateRemainingNotes();
     updateProgressBar();
   } else {
@@ -591,6 +599,46 @@ function handleKeyPress(event) {
   if (gameState.currentIndex >= gameState.notesCount) {
     endGame();
   }
+}
+
+/**
+ * ゲームのメインループ。requestAnimationFrameで毎フレーム呼び出される。
+ */
+function gameLoop() {
+  // ゲームがアクティブでなければループを停止
+  if (!gameState.isActive) return;
+
+  // --- 時間ベースの線形補間でスクロール位置を計算 ---
+  if (gameState.animationStartTime > 0) {
+    const animationDuration =
+      parseFloat(
+        document.documentElement.style.getPropertyValue(
+          "--note-scroll-duration"
+        )
+      ) * 1000 || 100; // msに変換
+
+    const elapsedTime = Date.now() - gameState.animationStartTime;
+    const progress = Math.min(elapsedTime / animationDuration, 1); // 0.0 ~ 1.0
+
+    // 線形補間 (Lerp)
+    gameState.scrollX =
+      gameState.animationStartScrollX +
+      (gameState.animationEndScrollX - gameState.animationStartScrollX) *
+        progress;
+
+    // アニメーションが完了したら、開始時刻をリセット
+    if (progress >= 1) {
+      gameState.animationStartTime = 0;
+      // 誤差をなくすために最終位置を正確に設定
+      gameState.scrollX = gameState.animationEndScrollX;
+    }
+  }
+
+  // 描画を更新
+  dom.notesDisplay.style.transform = `translateX(${gameState.scrollX}px)`;
+
+  // 次のフレームを要求
+  requestAnimationFrame(gameLoop);
 }
 
 /**
@@ -678,10 +726,8 @@ function interruptGame(playCancelSound = true) {
   dom.progressBar.style.width = "0%"; // プログレスバーをリセット
 
   // アニメーションを無効にして譜面を即座にクリア
-  dom.notesDisplay.style.transition = "none";
   dom.notesDisplay.style.transform = "translateX(0px)";
   dom.notesDisplay.innerHTML = "";
-  dom.notesDisplay.style.transition = "";
 
   dom.bottomWrapper.classList.add("hidden");
   dom.startButton.textContent = "Start";

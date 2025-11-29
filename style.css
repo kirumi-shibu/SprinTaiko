@@ -125,7 +125,6 @@ h1 {
   position: relative;
   align-items: center; /* フレックスアイテムを垂直方向の中央に配置 */
   left: var(--notes-display-left);
-  transition: transform var(--note-scroll-duration, 0.1s) linear; /* 音符が流れるアニメーション */
 }
 
 .note {
