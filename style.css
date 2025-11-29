@@ -1,5 +1,5 @@
 :root {
-  --note-width: 80px;
+  --note-width: 75px;
   --note-border-width: 10px;
   --target-indicator-left: 125px;
 }
@@ -65,11 +65,9 @@ h1 {
   position: relative;
   width: 1420px;
   height: 240px;
-  /* max-width: 900px; */
   margin: 20px auto;
   border: 10px solid #000;
   background-color: #2c2c2c;
-  padding: 20px 0;
 }
 
 #target-note-indicator {
@@ -126,7 +124,7 @@ h1 {
   height: 100%;
   position: relative;
   align-items: center; /* フレックスアイテムを垂直方向の中央に配置 */
-  left: var(--notes-display-left, 70px);
+  left: var(--notes-display-left);
   transition: transform var(--note-scroll-duration, 0.1s) linear; /* 音符が流れるアニメーション */
 }
 
@@ -149,6 +147,19 @@ h1 {
 .note.hit {
   /* 叩かれた音符は非表示にする */
   visibility: hidden;
+}
+
+/* 小節線 */
+.bar-line {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 4px; /* 線の太さ */
+  background-color: #b4b4b4; /* 線の色 */
+  z-index: 0; /* 音符(z-index: 1以上)より背後に表示 */
+  transform: translateX(
+    -50%
+  ); /* JSで指定されたleft位置に対して、自身の幅の半分だけ左にずらして中央揃えにする */
 }
 
 .don {

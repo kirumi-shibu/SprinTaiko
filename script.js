@@ -19,6 +19,7 @@ const dom = {
   speedUpBtn: document.getElementById("speed-up-btn"),
   speedDownBtn: document.getElementById("speed-down-btn"),
   notesCountInput: document.getElementById("notes-count-input"),
+  barLineInput: document.getElementById("bar-line-input"),
   settingsPanel: document.getElementById("settings-panel"),
   openSettingsBtn: document.getElementById("open-settings-btn"),
   closeSettingsBtn: document.getElementById("close-settings-btn"),
@@ -45,7 +46,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.4"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.5"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -57,6 +58,7 @@ const ANIMATION_SPEED_KEY = "sprintaiko-animation-speed"; // アニメーショ�
 const MISS_PENALTY_TIME = 500; // ミスした場合のタイマーペナルティ (ミリ秒)
 const COUNTDOWN_INTERVAL = 500; // カウントダウンの間隔 (ms)
 const KEY_CONFIG_KEY = "sprintaiko-key-config"; // キー設定のキー
+const BAR_LINE_KEY = "sprintaiko-bar-line"; // 小節線のキー
 
 // --- 音声管理 ---
 let audioContext;
@@ -85,6 +87,7 @@ const gameState = {
   hiSpeed: 1.0, // ハイスピード設定
   notesCount: 100, // ノーツ数
   volume: 0.25, // 音量
+  barLineInterval: 8, // 小節線を表示する間隔 (0で非表示)
   keyConfig: {
     don_left: "f",
     don_right: "j",
@@ -252,13 +255,22 @@ function renderNotes() {
   dom.notesDisplay.innerHTML = ""; // 既存の音符をクリア
   const fragment = document.createDocumentFragment();
   // 全ての音符を一度に描画する
-  gameState.sequence.forEach((noteType, index) => {
+  for (let i = 0; i < gameState.sequence.length; i++) {
+    const noteType = gameState.sequence[i];
     const noteElement = document.createElement("div");
     noteElement.classList.add("note", noteType);
-    noteElement.style.zIndex = gameState.notesCount - index; // 先頭の音符ほど手前に表示する
-    // noteElement.textContent = noteType === "don" ? "ド" : "カ";
+    noteElement.style.zIndex = gameState.notesCount - i; // 先頭の音符ほど手前に表示する
     fragment.appendChild(noteElement);
-  });
+
+    // 小節線の描画判定: 独立した要素として追加する
+    if (gameState.barLineInterval > 0 && i % gameState.barLineInterval === 0) {
+      const barLineElement = document.createElement("div");
+      barLineElement.classList.add("bar-line");
+      const position = (i + 0.5) * getNoteOffset();
+      barLineElement.style.left = `${position}px`;
+      fragment.appendChild(barLineElement);
+    }
+  }
   dom.notesDisplay.appendChild(fragment);
 
   // 残り音符数を更新
@@ -304,7 +316,12 @@ function getNoteOffset() {
     )
   );
   const baseWidth = noteWidth + noteBorderWidth * 2;
-  const noteMargin = -5 + (gameState.hiSpeed - 1.0) * 50;
+  const noteMargin =
+    parseFloat(
+      document.documentElement.style.getPropertyValue(
+        "--note-margin-horizontal"
+      )
+    ) || -5;
   return baseWidth + noteMargin * 2;
 }
 
@@ -320,6 +337,12 @@ function updateHiSpeed(newSpeed) {
   // UI表示を更新
   dom.speedDisplay.textContent = speed;
 
+  // CSSのカスタムプロパティを更新して、音符の間隔を変更
+  document.documentElement.style.setProperty(
+    "--note-margin-horizontal",
+    `${-5 + (parseFloat(speed) - 1.0) * 50}px`
+  );
+
   // --- 譜面の開始位置を計算して更新 ---
   const targetCenter = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue(
@@ -331,12 +354,6 @@ function updateHiSpeed(newSpeed) {
   document.documentElement.style.setProperty(
     "--notes-display-left",
     `${startLeft}px`
-  );
-
-  // CSSのカスタムプロパティを更新して、音符の間隔を変更
-  document.documentElement.style.setProperty(
-    "--note-margin-horizontal",
-    `${-5 + (speed - 1.0) * 50}px`
   );
 
   // 設定をlocalStorageに保存
@@ -355,6 +372,23 @@ function updateHiSpeed(newSpeed) {
 
     // アニメーションを元に戻す
     dom.notesDisplay.style.transition = "";
+
+    // ★小節線の位置も再計算する
+    const barLines = dom.notesDisplay.querySelectorAll(".bar-line");
+    let barLineIndex = 0;
+    for (let i = 0; i < gameState.sequence.length; i++) {
+      if (
+        gameState.barLineInterval > 0 &&
+        i % gameState.barLineInterval === 0
+      ) {
+        if (barLines[barLineIndex]) {
+          barLines[barLineIndex].style.left = `${
+            (i + 0.5) * getNoteOffset()
+          }px`;
+          barLineIndex++;
+        }
+      }
+    }
   }
 }
 
@@ -372,6 +406,21 @@ function updateNotesCount(newCount) {
 
   // 設定をlocalStorageに保存
   localStorage.setItem(NOTES_COUNT_KEY, gameState.notesCount);
+}
+
+/**
+ * 小節線の間隔設定を更新し、UIに適用する
+ * @param {number} newInterval 新しい間隔
+ */
+function updateBarLineInterval(newInterval) {
+  // 0以上の整数に制限
+  gameState.barLineInterval = Math.max(0, parseInt(newInterval, 10) || 0);
+
+  // UI表示を更新
+  dom.barLineInput.value = gameState.barLineInterval;
+
+  // 設定をlocalStorageに保存
+  localStorage.setItem(BAR_LINE_KEY, gameState.barLineInterval);
 }
 
 /**
@@ -439,6 +488,9 @@ async function startGame() {
   dom.notesDisplay.offsetHeight; // この行は重要です
   dom.notesDisplay.style.transition = ""; // transitionの設定を元に戻す
 
+  // ★カウントダウン前に譜面をクリアする
+  dom.notesDisplay.innerHTML = "";
+
   // UIの更新（ボタンなどを先に隠す）
   dom.startButton.disabled = true;
   dom.bottomWrapper.classList.add("hidden");
@@ -503,7 +555,8 @@ function handleKeyPress(event) {
     }, 200); // アニメーションの時間（0.2秒）に合わせてクラスを削除
 
     // 叩かれた音符の要素を取得して非表示にするクラスを追加
-    const hitNoteElement = dom.notesDisplay.children[gameState.currentIndex];
+    const hitNoteElement =
+      dom.notesDisplay.querySelectorAll(".note")[gameState.currentIndex];
     if (hitNoteElement) {
       hitNoteElement.classList.add("hit");
     }
@@ -681,12 +734,15 @@ function initialize() {
     parseFloat(localStorage.getItem(ANIMATION_SPEED_KEY)) || 0.1;
   const savedKeyConfig =
     JSON.parse(localStorage.getItem(KEY_CONFIG_KEY)) || gameState.keyConfig;
+  const savedBarLineInterval =
+    parseInt(localStorage.getItem(BAR_LINE_KEY)) || 8;
 
   updateVolume(savedVolume, false); // UIと内部状態のみ更新
   updateNotesCount(savedNotesCount);
   updateHiSpeed(savedSpeed);
   updateAnimationSpeed(savedAnimationSpeed, false);
   displayRanking(); // ページ読み込み時にランキングを表示
+  updateBarLineInterval(savedBarLineInterval); // 小節線設定を読み込む
   updateKeyConfig(savedKeyConfig); // 保存されたキー設定を読み込む
 
   // バージョン番号を表示
@@ -708,6 +764,16 @@ function initialize() {
       return;
     }
     updateNotesCount(parseInt(event.target.value, 10));
+  });
+
+  // 小節線入力欄のイベントリスナー
+  dom.barLineInput.addEventListener("change", (event) => {
+    if (gameState.isActive) {
+      // ゲーム中は変更を元に戻す
+      event.target.value = gameState.barLineInterval;
+      return;
+    }
+    updateBarLineInterval(event.target.value);
   });
 
   // 音量スライダーのイベントリスナー
