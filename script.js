@@ -13,6 +13,7 @@ const dom = {
   finalScoreDisplay: document.getElementById("final-score"),
   penaltyCountDisplay: document.getElementById("penalty-count"),
   kpsDisplay: document.getElementById("kps-display"),
+  postToXBtn: document.getElementById("post-to-x-btn"),
   rankingList: document.getElementById("ranking-list"),
   rankingInfo: document.getElementById("ranking-info"),
   speedDisplay: document.getElementById("speed-display"),
@@ -46,7 +47,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.8"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.9"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -695,6 +696,19 @@ function endGame() {
 
 // --- イベントリスナーの設定 ---
 dom.startButton.addEventListener("click", startGame);
+
+// Xにポストするボタンのイベントリスナー
+dom.postToXBtn.addEventListener("click", () => {
+  const score = dom.finalScoreDisplay.textContent;
+  const gameUrl = "https://kirumi-shibu.github.io/SprinTaiko/";
+  // URLも本文に含めることで、改行後のスペースを制御する
+  const text = `I got a score of ${score} on #SprinTaiko !\n${gameUrl}`;
+
+  const xIntentUrl = new URL("https://twitter.com/intent/tweet");
+  xIntentUrl.searchParams.set("text", text);
+
+  window.open(xIntentUrl.toString(), "_blank", "noopener,noreferrer");
+});
 
 // Enterでゲーム開始、Escで中断するグローバルなキーイベント
 document.addEventListener("keydown", (event) => {

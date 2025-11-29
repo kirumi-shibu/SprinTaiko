@@ -702,6 +702,24 @@ h1 {
   padding-bottom: 10px;
 }
 
+.result-actions {
+  display: flex;
+  justify-content: flex-end; /* ボタンを右端に寄せる */
+  margin-top: 20px;
+  padding-top: 15px;
+}
+
+.result-actions button {
+  background: #1da1f2; /* Xのブランドカラー */
+  color: white;
+  font-family: "Kosugi Maru", sans-serif;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px; /* 角を丸くする */
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
 /* 汎用的な非表示クラス */
 .hidden {
   opacity: 0;
