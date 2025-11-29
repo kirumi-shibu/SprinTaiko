@@ -46,7 +46,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.7"; // ★ここにバージョンを定義
+const VERSION = "v2025.11.29.8"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -615,22 +615,29 @@ function gameLoop() {
         document.documentElement.style.getPropertyValue(
           "--note-scroll-duration"
         )
-      ) * 1000 || 100; // msに変換
+      ) * 1000 || 0; // msに変換
 
-    const elapsedTime = Date.now() - gameState.animationStartTime;
-    const progress = Math.min(elapsedTime / animationDuration, 1); // 0.0 ~ 1.0
-
-    // 線形補間 (Lerp)
-    gameState.scrollX =
-      gameState.animationStartScrollX +
-      (gameState.animationEndScrollX - gameState.animationStartScrollX) *
-        progress;
-
-    // アニメーションが完了したら、開始時刻をリセット
-    if (progress >= 1) {
-      gameState.animationStartTime = 0;
-      // 誤差をなくすために最終位置を正確に設定
+    // アニメーション時間が0の場合は、即座に最終位置に移動する
+    if (animationDuration === 0) {
       gameState.scrollX = gameState.animationEndScrollX;
+      gameState.animationStartTime = 0; // アニメーションを終了
+      // このフレームでの処理は完了したので、以降の計算はスキップ
+    } else {
+      const elapsedTime = Date.now() - gameState.animationStartTime;
+      const progress = Math.min(elapsedTime / animationDuration, 1); // 0.0 ~ 1.0
+
+      // 線形補間 (Lerp)
+      gameState.scrollX =
+        gameState.animationStartScrollX +
+        (gameState.animationEndScrollX - gameState.animationStartScrollX) *
+          progress;
+
+      // アニメーションが完了したら、開始時刻をリセット
+      if (progress >= 1) {
+        gameState.animationStartTime = 0;
+        // 誤差をなくすために最終位置を正確に設定
+        gameState.scrollX = gameState.animationEndScrollX;
+      }
     }
   }
 
