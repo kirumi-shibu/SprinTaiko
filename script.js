@@ -47,7 +47,7 @@ const dom = {
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.11.29.9"; // ★ここにバージョンを定義
+const VERSION = "v2025.12.01.1"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
