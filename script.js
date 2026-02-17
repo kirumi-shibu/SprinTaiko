@@ -63,6 +63,12 @@ const KEY_CONFIG_KEY = "sprintaiko-key-config"; // キー設定のキー
 const BAR_LINE_KEY = "sprintaiko-bar-line"; // 小節線のキー
 const SEED_KEY = "sprintaiko-seed"; // シード値のキー
 
+// レイアウト計算用の定数 (CSSと値を合わせることでズーム時のズレを防ぐ)
+const NOTE_WIDTH = 75;
+const NOTE_BORDER_WIDTH = 10;
+const TARGET_INDICATOR_LEFT = 125;
+const BAR_LINE_WIDTH = 4;
+
 // --- 音声管理 ---
 let audioContext;
 let masterGainNode; // 全ての音量を制御するマスターGainNode
@@ -332,19 +338,24 @@ function generateNotes() {
 function renderNotes() {
   dom.notesDisplay.innerHTML = ""; // 既存の音符をクリア
   const fragment = document.createDocumentFragment();
+  const noteOffset = getNoteOffset(); // ノーツ間の距離
+  const noteTotalWidth = NOTE_WIDTH + NOTE_BORDER_WIDTH * 2; // ノーツの描画幅
+
   // 全ての音符を一度に描画する
   for (let i = 0; i < gameState.sequence.length; i++) {
     const noteType = gameState.sequence[i];
     const noteElement = document.createElement("div");
     noteElement.classList.add("note", noteType);
     noteElement.style.zIndex = gameState.notesCount - i; // 先頭の音符ほど手前に表示する
+    // 絶対配置で位置を指定 (中心位置 = i * offset)
+    noteElement.style.left = `${i * noteOffset - noteTotalWidth / 2}px`;
     fragment.appendChild(noteElement);
 
     // 小節線の描画判定: 独立した要素として追加する
     if (gameState.barLineInterval > 0 && i % gameState.barLineInterval === 0) {
       const barLineElement = document.createElement("div");
       barLineElement.classList.add("bar-line");
-      const position = (i + 0.5) * getNoteOffset();
+      const position = i * noteOffset - BAR_LINE_WIDTH / 2;
       barLineElement.style.left = `${position}px`;
       fragment.appendChild(barLineElement);
     }
@@ -384,22 +395,11 @@ function updateProgressBar() {
  * @returns {number}
  */
 function getNoteOffset() {
-  // CSSから値を取得して計算することで、一元管理する
-  const noteWidth = parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue("--note-width"),
-  );
-  const noteBorderWidth = parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      "--note-border-width",
-    ),
-  );
-  const baseWidth = noteWidth + noteBorderWidth * 2;
-  const noteMargin =
-    parseFloat(
-      document.documentElement.style.getPropertyValue(
-        "--note-margin-horizontal",
-      ),
-    ) || -5;
+  // CSSのgetComputedStyleに依存せず、定数と設定値から計算する
+  const baseWidth = NOTE_WIDTH + NOTE_BORDER_WIDTH * 2;
+  // マージン計算式: -5 + (hiSpeed - 1.0) * 50
+  // updateHiSpeed関数内の計算式と一致させる
+  const noteMargin = -5 + (gameState.hiSpeed - 1.0) * 50;
   return baseWidth + noteMargin * 2;
 }
 
@@ -421,52 +421,53 @@ function updateHiSpeed(newSpeed) {
     `${-5 + (parseFloat(speed) - 1.0) * 50}px`,
   );
 
-  // --- 譜面の開始位置を計算して更新 ---
-  const targetCenter = parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      "--target-indicator-left",
-    ),
-  );
-  const noteOffset = getNoteOffset();
-  const startLeft = targetCenter - noteOffset / 2;
+  // --- 譜面の基準位置を更新（ターゲット位置に固定） ---
   document.documentElement.style.setProperty(
     "--notes-display-left",
-    `${startLeft}px`,
+    `${TARGET_INDICATOR_LEFT}px`,
   );
 
   // 設定をlocalStorageに保存
   localStorage.setItem(HISPEED_KEY, speed);
 
+  // --- 既存のノーツと小節線の位置を再計算して適用 ---
+  const noteOffset = getNoteOffset();
+  const noteTotalWidth = NOTE_WIDTH + NOTE_BORDER_WIDTH * 2;
+
+  const notes = dom.notesDisplay.querySelectorAll(".note");
+  notes.forEach((note, i) => {
+    note.style.left = `${i * noteOffset - noteTotalWidth / 2}px`;
+  });
+
+  const barLines = dom.notesDisplay.querySelectorAll(".bar-line");
+  let barLineIndex = 0;
+  for (let i = 0; i < gameState.sequence.length; i++) {
+    if (gameState.barLineInterval > 0 && i % gameState.barLineInterval === 0) {
+      if (barLines[barLineIndex]) {
+        barLines[barLineIndex].style.left = `${
+          i * noteOffset - BAR_LINE_WIDTH / 2
+        }px`;
+        barLineIndex++;
+      }
+    }
+  }
+
   // ゲームプレイ中にハイスピードが変更された場合、譜面のスクロール位置を即座に再計算する
   if (gameState.isActive) {
+    // 新しいオフセットに基づいて現在のスクロール位置を再計算
+    gameState.scrollX = -(gameState.currentIndex * noteOffset);
+    // アニメーションをリセット（即座に完了状態にする）して、位置ズレを防ぐ
+    gameState.animationStartTime = 0;
+
     // 一時的にアニメーションを無効化して、transformを即座に適用する
     dom.notesDisplay.style.transition = "none";
-    dom.notesDisplay.style.transform = `translateX(${-(
-      gameState.currentIndex * getNoteOffset()
-    )}px)`;
+    dom.notesDisplay.style.transform = `translateX(${gameState.scrollX}px)`;
 
     // ブラウザに強制的にスタイルを適用させる（リフロー）
     dom.notesDisplay.offsetHeight; // この行は重要です
 
     // アニメーションを元に戻す
     dom.notesDisplay.style.transition = "";
-
-    // ★小節線の位置も再計算する
-    const barLines = dom.notesDisplay.querySelectorAll(".bar-line");
-    let barLineIndex = 0;
-    for (let i = 0; i < gameState.sequence.length; i++) {
-      if (
-        gameState.barLineInterval > 0 &&
-        i % gameState.barLineInterval === 0
-      ) {
-        if (barLines[barLineIndex]) {
-          barLines[barLineIndex].style.left = `${
-            (i + 0.5) * getNoteOffset()
-          }px`;
-          barLineIndex++;
-        }
-      }
-    }
   }
 }
 
@@ -897,6 +898,17 @@ function initialize() {
   const savedBarLineInterval =
     parseInt(localStorage.getItem(BAR_LINE_KEY)) || 8;
   const savedSeed = localStorage.getItem(SEED_KEY) || "";
+
+  // JSの定数値をCSS変数に適用（ズレ防止と整合性確保のため）
+  document.documentElement.style.setProperty("--note-width", `${NOTE_WIDTH}px`);
+  document.documentElement.style.setProperty(
+    "--note-border-width",
+    `${NOTE_BORDER_WIDTH}px`,
+  );
+  document.documentElement.style.setProperty(
+    "--target-indicator-left",
+    `${TARGET_INDICATOR_LEFT}px`,
+  );
 
   updateVolume(savedVolume, false); // UIと内部状態のみ更新
   updateNotesCount(savedNotesCount);

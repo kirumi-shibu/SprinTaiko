@@ -22,8 +22,12 @@ h1 {
 .title-sprint,
 .title-aiko {
   /* 3Dテキスト効果 */
-  text-shadow: 1px 1px 0px #000, 2px 2px 0px #000, 3px 3px 0px #000,
-    4px 4px 0px #000, 8px 8px 15px rgba(0, 0, 0, 0.5);
+  text-shadow:
+    1px 1px 0px #000,
+    2px 2px 0px #000,
+    3px 3px 0px #000,
+    4px 4px 0px #000,
+    8px 8px 15px rgba(0, 0, 0, 0.5);
 }
 
 .title-sprint {
@@ -120,21 +124,23 @@ h1 {
 }
 
 #notes-display {
-  display: flex;
+  display: block; /* Flexboxをやめてブロック要素にする */
   height: 100%;
   position: relative;
-  align-items: center; /* フレックスアイテムを垂直方向の中央に配置 */
   left: var(--notes-display-left);
 }
 
 .note {
-  position: relative; /* z-indexを有効にするために追加 */
+  position: absolute; /* 絶対配置に変更 */
+  top: 50%; /* 親要素の垂直中央 */
+  transform: translateY(-50%); /* 垂直中央揃えの補正 */
   width: var(--note-width);
   height: var(--note-width);
   border-radius: 50%;
   border: var(--note-border-width) solid #f7efe0; /* 内側の白いボーダー */
-  box-shadow: 0 0 0 5px #000000, 10px 10px 20px rgba(0, 0, 0, 0.5); /* 外側の黒ボーダー + ドロップシャドウ */
-  margin: 0 var(--note-margin-horizontal, -5px);
+  box-shadow:
+    0 0 0 5px #000000,
+    10px 10px 20px rgba(0, 0, 0, 0.5); /* 外側の黒ボーダー + ドロップシャドウ */
   flex-shrink: 0; /* 音符が縮まないようにする */
   display: flex;
   justify-content: center;
@@ -156,9 +162,6 @@ h1 {
   width: 4px; /* 線の太さ */
   background-color: #b4b4b4; /* 線の色 */
   z-index: 0; /* 音符(z-index: 1以上)より背後に表示 */
-  transform: translateX(
-    -50%
-  ); /* JSで指定されたleft位置に対して、自身の幅の半分だけ左にずらして中央揃えにする */
 }
 
 .don {
@@ -359,7 +362,9 @@ h1 {
   padding: 15px 0;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
 }
 
 .volume-control {
@@ -536,7 +541,9 @@ h1 {
   font-size: 10em;
   font-weight: bold;
   color: white;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.7), 0 0 40px rgba(0, 0, 0, 0.5);
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.7),
+    0 0 40px rgba(0, 0, 0, 0.5);
   z-index: 1000; /* 音符より手前に表示 */
   pointer-events: none; /* クリックを背後に透過させる */
   transition: opacity 0.2s ease-out;
@@ -568,7 +575,9 @@ h1 {
   box-sizing: border-box;
 
   /* 表示/非表示のアニメーション */
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
   opacity: 1;
   transform: scale(1);
   margin: 0; /* bottom-wrapperで管理するためリセット */
@@ -645,7 +654,9 @@ h1 {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: color 0.2s, transform 0.2s;
+  transition:
+    color 0.2s,
+    transform 0.2s;
 }
 
 #reset-ranking-btn:hover {
