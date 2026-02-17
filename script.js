@@ -44,10 +44,11 @@ const dom = {
   animationSpeedSlider: document.getElementById("animation-speed-slider"),
   animationSpeedDisplay: document.getElementById("animation-speed-display"),
   resetKeyConfigBtn: document.getElementById("reset-key-config-btn"),
+  seedInput: document.getElementById("seed-input"),
 };
 
 // --- 定数定義 ---
-const VERSION = "v2025.12.01.1"; // ★ここにバージョンを定義
+const VERSION = "v2026.02.17.1"; // ★ここにバージョンを定義
 const RANKING_SIZE = 5; // ランキングの保存件数
 const RANKING_KEY = "sprintaiko-ranking"; // localStorageのキー
 const NOTE_TYPES = ["don", "ka"]; // 音符の種類
@@ -60,6 +61,7 @@ const MISS_PENALTY_TIME = 500; // ミスした場合のタイマーペナルテ�
 const COUNTDOWN_INTERVAL = 500; // カウントダウンの間隔 (ms)
 const KEY_CONFIG_KEY = "sprintaiko-key-config"; // キー設定のキー
 const BAR_LINE_KEY = "sprintaiko-bar-line"; // 小節線のキー
+const SEED_KEY = "sprintaiko-seed"; // シード値のキー
 
 // --- 音声管理 ---
 let audioContext;
@@ -95,6 +97,8 @@ const gameState = {
     ka_left: "d",
     ka_right: "k",
   },
+  seed: "", // 譜面生成シード
+  isPatternMode: false, // パターン入力モードかどうか
   // アニメーション用の状態
   scrollX: 0, // 現在のスクロール位置 (translateX)
   animationStartTime: 0, // アニメーションの開始時刻
@@ -251,13 +255,74 @@ function displayRanking(newRecord = null) {
 }
 
 /**
- * 100個の音符をランダムに生成する関数
+ * シード付き乱数生成器 (Mulberry32)
+ * @param {number} a シード値
+ * @returns {function} 0.0 〜 1.0 の乱数を返す関数
+ */
+function mulberry32(a) {
+  return function () {
+    let t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * 文字列を数値シードに変換するハッシュ関数
+ * @param {string} str
+ * @returns {number}
+ */
+function stringToSeed(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // 32bit integerに変換
+  }
+  return hash;
+}
+
+/**
+ * 音符を生成する関数。シードが設定されていれば固定パターン、なければランダム。
  */
 function generateNotes() {
   gameState.sequence = [];
-  for (let i = 0; i < gameState.notesCount; i++) {
-    const type = NOTE_TYPES[Math.floor(Math.random() * NOTE_TYPES.length)];
-    gameState.sequence.push(type);
+
+  // パターン入力モードの判定 (1と2のみで構成されている場合)
+  // 空白を除去してから判定する
+  const seedText = gameState.seed.replace(/\s/g, "");
+  // 1と2のみで構成され、かつ空でない場合
+  const isPatternMode = seedText.length > 0 && /^[12]+$/.test(seedText);
+  gameState.isPatternMode = isPatternMode;
+
+  if (gameState.isPatternMode) {
+    // パターンモード: 入力文字列に基づいて譜面を生成
+    for (const char of seedText) {
+      if (char === "1") gameState.sequence.push("don");
+      else if (char === "2") gameState.sequence.push("ka");
+    }
+    // ノーツ数をパターンの長さに合わせる（内部状態のみ更新）
+    gameState.notesCount = gameState.sequence.length;
+    // UI上の表示も一時的に更新（ユーザーに分かりやすくするため）
+    dom.notesCountInput.value = gameState.notesCount;
+    dom.remainingNotesDisplay.textContent = gameState.notesCount;
+  } else {
+    // 通常モード: 設定されたノーツ数を使用
+    // パターンモードから戻った場合などに備え、保存された設定値を復元する
+    const savedNotesCount =
+      parseInt(localStorage.getItem(NOTES_COUNT_KEY)) || 100;
+    gameState.notesCount = savedNotesCount;
+    dom.notesCountInput.value = gameState.notesCount;
+    dom.remainingNotesDisplay.textContent = gameState.notesCount;
+
+    const random = gameState.seed
+      ? mulberry32(stringToSeed(gameState.seed))
+      : Math.random;
+    for (let i = 0; i < gameState.notesCount; i++) {
+      const type = NOTE_TYPES[Math.floor(random() * NOTE_TYPES.length)];
+      gameState.sequence.push(type);
+    }
   }
 }
 
@@ -475,6 +540,17 @@ function updateAnimationSpeed(newDuration, save = true) {
     localStorage.setItem(ANIMATION_SPEED_KEY, duration);
   }
 }
+
+/**
+ * シード値を更新し、保存する
+ * @param {string} newSeed
+ */
+function updateSeed(newSeed) {
+  gameState.seed = newSeed.trim();
+  dom.seedInput.value = gameState.seed;
+  localStorage.setItem(SEED_KEY, gameState.seed);
+}
+
 /**
  * ゲームを開始する関数
  */
@@ -669,8 +745,8 @@ function endGame() {
   const score = Math.round(kps * accuracy ** 3 * 10000);
   const newRecord = { score: score, missCount: gameState.missCount };
 
-  // --- ランキングの更新処理（ノーツ数が100以上の場合のみ） ---
-  if (gameState.notesCount >= 100) {
+  // --- ランキングの更新処理（ノーツ数が100以上、かつシード値が設定されていない場合のみ） ---
+  if (gameState.notesCount >= 100 && !gameState.seed) {
     dom.rankingInfo.classList.add("hidden"); // 注釈を非表示にする
     const ranking = loadRanking();
     ranking.push(newRecord);
@@ -682,8 +758,15 @@ function endGame() {
     localStorage.setItem(RANKING_KEY, JSON.stringify(newRanking));
     displayRanking(newRecord); // 更新後のランキングを表示（新スコアを強調）
   } else {
-    // 100ノーツ未満の場合は、注釈を表示してランキング登録されないことを明示
+    // 保存対象外の場合は、注釈を表示してランキング登録されないことを明示
     dom.rankingInfo.classList.remove("hidden");
+    // 理由に応じてメッセージを変更
+    if (gameState.seed) {
+      dom.rankingInfo.textContent = "* Fixed seeds/patterns are not ranked.";
+    } else {
+      dom.rankingInfo.textContent =
+        "* Scores for games with 100 or more notes will be registered.";
+    }
     displayRanking(); // 現在のランキングをそのまま表示
   }
 
@@ -813,6 +896,7 @@ function initialize() {
     JSON.parse(localStorage.getItem(KEY_CONFIG_KEY)) || gameState.keyConfig;
   const savedBarLineInterval =
     parseInt(localStorage.getItem(BAR_LINE_KEY)) || 8;
+  const savedSeed = localStorage.getItem(SEED_KEY) || "";
 
   updateVolume(savedVolume, false); // UIと内部状態のみ更新
   updateNotesCount(savedNotesCount);
@@ -821,6 +905,7 @@ function initialize() {
   displayRanking(); // ページ読み込み時にランキングを表示
   updateBarLineInterval(savedBarLineInterval); // 小節線設定を読み込む
   updateKeyConfig(savedKeyConfig); // 保存されたキー設定を読み込む
+  updateSeed(savedSeed); // シード値を読み込む
 
   // バージョン番号を表示
   dom.versionDisplay.textContent = VERSION;
@@ -861,6 +946,11 @@ function initialize() {
   // アニメーション速度スライダーのイベントリスナー
   dom.animationSpeedSlider.addEventListener("input", (event) => {
     updateAnimationSpeed(parseFloat(event.target.value));
+  });
+
+  // シード入力欄のイベントリスナー
+  dom.seedInput.addEventListener("change", (event) => {
+    updateSeed(event.target.value);
   });
 }
 
