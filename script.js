@@ -36,10 +36,10 @@ const dom = {
   versionDisplay: document.getElementById("version-display"),
   advancedSettingsPanel: document.getElementById("advanced-settings-panel"),
   openAdvancedSettingsBtn: document.getElementById(
-    "open-advanced-settings-btn"
+    "open-advanced-settings-btn",
   ),
   closeAdvancedSettingsBtn: document.getElementById(
-    "close-advanced-settings-btn"
+    "close-advanced-settings-btn",
   ),
   animationSpeedSlider: document.getElementById("animation-speed-slider"),
   animationSpeedDisplay: document.getElementById("animation-speed-display"),
@@ -321,19 +321,19 @@ function updateProgressBar() {
 function getNoteOffset() {
   // CSSから値を取得して計算することで、一元管理する
   const noteWidth = parseFloat(
-    getComputedStyle(document.documentElement).getPropertyValue("--note-width")
+    getComputedStyle(document.documentElement).getPropertyValue("--note-width"),
   );
   const noteBorderWidth = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue(
-      "--note-border-width"
-    )
+      "--note-border-width",
+    ),
   );
   const baseWidth = noteWidth + noteBorderWidth * 2;
   const noteMargin =
     parseFloat(
       document.documentElement.style.getPropertyValue(
-        "--note-margin-horizontal"
-      )
+        "--note-margin-horizontal",
+      ),
     ) || -5;
   return baseWidth + noteMargin * 2;
 }
@@ -353,20 +353,20 @@ function updateHiSpeed(newSpeed) {
   // CSSのカスタムプロパティを更新して、音符の間隔を変更
   document.documentElement.style.setProperty(
     "--note-margin-horizontal",
-    `${-5 + (parseFloat(speed) - 1.0) * 50}px`
+    `${-5 + (parseFloat(speed) - 1.0) * 50}px`,
   );
 
   // --- 譜面の開始位置を計算して更新 ---
   const targetCenter = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue(
-      "--target-indicator-left"
-    )
+      "--target-indicator-left",
+    ),
   );
   const noteOffset = getNoteOffset();
   const startLeft = targetCenter - noteOffset / 2;
   document.documentElement.style.setProperty(
     "--notes-display-left",
-    `${startLeft}px`
+    `${startLeft}px`,
   );
 
   // 設定をlocalStorageに保存
@@ -466,7 +466,7 @@ function updateAnimationSpeed(newDuration, save = true) {
 
   document.documentElement.style.setProperty(
     "--note-scroll-duration",
-    `${duration}s`
+    `${duration}s`,
   );
   dom.animationSpeedSlider.value = duration;
   dom.animationSpeedDisplay.textContent = duration;
@@ -555,6 +555,8 @@ function handleKeyPress(event) {
   const key = event.key.toLowerCase();
   if (!keyMap[key]) return; // 対象キーでなければ無視
 
+  event.preventDefault(); // ゲーム操作に使われるキーのデフォルト動作（Tabキーのフォーカス移動など）を無効化
+
   const expectedNoteType = gameState.sequence[gameState.currentIndex];
   const pressedNoteType = keyMap[key];
 
@@ -614,8 +616,8 @@ function gameLoop() {
     const animationDuration =
       parseFloat(
         document.documentElement.style.getPropertyValue(
-          "--note-scroll-duration"
-        )
+          "--note-scroll-duration",
+        ),
       ) * 1000 || 0; // msに変換
 
     // アニメーション時間が0の場合は、即座に最終位置に移動する
@@ -775,7 +777,7 @@ function updateKeyConfig(newConfig) {
   // UIの表示を更新
   for (const action in gameState.keyConfig) {
     const button = document.querySelector(
-      `.key-config-btn[data-action="${action}"]`
+      `.key-config-btn[data-action="${action}"]`,
     );
     if (button) {
       button.textContent = gameState.keyConfig[action].toUpperCase();
@@ -876,7 +878,7 @@ function updateSoundSettingsUI() {
 
     if (statusSpan) {
       const customSound = localStorage.getItem(
-        CUSTOM_SOUND_KEY_PREFIX + soundKey
+        CUSTOM_SOUND_KEY_PREFIX + soundKey,
       );
       statusSpan.textContent = customSound ? "(Custom)" : "";
       resetButton.classList.toggle("hidden", !customSound);
@@ -943,7 +945,7 @@ function resetCustomSounds() {
   updateSoundSettingsUI();
 
   alert(
-    "Sounds have been reset to default. Please reload the page to apply the changes."
+    "Sounds have been reset to default. Please reload the page to apply the changes.",
   );
 }
 
@@ -1027,7 +1029,7 @@ document.querySelectorAll(".key-config-btn").forEach((button) => {
       button.style.borderColor = ""; // ボーダー色を元に戻す
 
       // 修飾キーや特殊キーは無視
-      if (e.key.length > 1 && e.key !== " ") {
+      if (e.key.length > 1 && e.key !== " " && e.key !== "Tab") {
         updateKeyConfig({}); // UI表示を元に戻すため空のオブジェクトで更新
         return;
       }
@@ -1038,7 +1040,7 @@ document.querySelectorAll(".key-config-btn").forEach((button) => {
       for (const act in gameState.keyConfig) {
         if (gameState.keyConfig[act] === newKey && act !== action) {
           alert(
-            `Key "${newKey.toUpperCase()}" is already assigned to another action.`
+            `Key "${newKey.toUpperCase()}" is already assigned to another action.`,
           );
           updateKeyConfig({}); // UI表示を元に戻す
           return;
